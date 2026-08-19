@@ -1,1 +1,4 @@
-media-libs/mesa-llvmpipe egl gles2 shared-glapi
+# colorburst: mesa-reven (the ChromeOS Flex mesa) instead of mesa-llvmpipe,
+# so the same image drives real laptop GPUs (iris/amdgpu) and VMs (virgl).
+# The provider swap itself happens in our virtual/opengles override.
+media-libs/mesa-reven egl gles2 shared-glapi

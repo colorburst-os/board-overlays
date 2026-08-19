@@ -18,7 +18,11 @@ USE="${USE} march_x86-64"
 
 # Include many firmwares as this is a "generic" board and might run on a
 # wide variety of platforms with who knows what kind of hardware.
-LINUX_FIRMWARE="iwlwifi-all"
+# iwlwifi covers the Wi-Fi half of Intel cards; the ibt_* files are the
+# Bluetooth half of the same silicon (btusb loads intel/ibt-*.sfi at every
+# boot). Without them a T14's AX210 radio has working Wi-Fi and a dead,
+# address-00:00 hci0.
+LINUX_FIRMWARE="iwlwifi-all ibt_9260 ibt_9462 ibt_9560 ibt_ax200 ibt_ax201 ibt_ax203 ibt_ax210 ibt_ax211"
 
 # Use LLVM amdgpu target when building LLVM.
 LLVM_TARGETS="AMDGPU X86"
@@ -26,6 +30,26 @@ LLVM_TARGETS="AMDGPU X86"
 USE="${USE} containers kvm_host crosvm-gpu virtio_gpu"
 
 USE="${USE} legacy_keyboard legacy_power_button sse kernel-5_15"
+
+# Developer tooling in the image: the OOBE test API and an open DevTools
+# port, which let us drive OOBE from the host. Both are genuine
+# remote-control surfaces.
+#
+# RELEASE BUILDS MUST SET -colorburst_devtools. Nothing needs them any more --
+# colorburst-provision creates the account via cryptohome directly -- they
+# exist only for development.
+#
+# Deliberately not keyed off cros_debug: that flag is off when this board's
+# packages are built, so gating on it would strip the tooling from dev images
+# too, silently.
+USE="${USE} colorburst_devtools"
+
+# Graphical installer. Without this the only way to install is VT2, a root
+# shell and `chromeos-install`, whose entire UI is "Are you sure (y/N)?".
+# os_install_service plus Chrome's --allow-os-install is the flow ChromeOS
+# Flex uses (overlay-reven sets the same flag); its installer-detection test
+# (ROOT-B the same size as ROOT-A) is already true for our USB layout.
+USE="${USE} os_install_service"
 
 # LLVM is required to build the llvmpipe and radeon drivers.
 USE="${USE} llvm"
@@ -52,7 +76,12 @@ USE="${USE} vulkan"
 USE="${USE} legacy_firmware_ui"
 
 # Enable a few more video cards as this is a generic board.
-VIDEO_CARDS="intel llvmpipe nouveau radeon"
+# colorburst: iris (Intel Gen8+, e.g. Tiger Lake laptops) and amdgpu so the
+# image boots on real hardware, not just VMs. Without iris, Chrome's GPU
+# process cannot allocate scanout buffers on an Intel laptop and crash-loops
+# with "Could not find SharedImageBackingFactory ... Scanout" -- the screen
+# stays black even though OOBE finished loading. virgl stays for the VMs.
+VIDEO_CARDS="intel iris amdgpu llvmpipe nouveau radeon virgl"
 
 # Virtual machines don't have physical TPMs.
 # Enable TPM2.0 simulator on it.
