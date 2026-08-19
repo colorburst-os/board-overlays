@@ -1,0 +1,8 @@
+# Test-infrastructure packages that unpack Chrome's autotest test artifacts
+# (dep-chrome_test / dep-telemetry_dep). Our Chrome builds with -build_tests,
+# so those artifacts do not exist; colorburst is exercised over SSH and the
+# DevTools protocol, not autotest. Declaring these provided satisfies
+# virtual/target-chromium-os-test without installing anything.
+chromeos-base/telemetry-0.0.1-r14
+chromeos-base/crosier-chrome-0.0.1-r37
+chromeos-base/chrome-binary-tests-0.0.1-r37

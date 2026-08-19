@@ -1,0 +1,39 @@
+# Copyright 2026 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Everything hardware-facing is inherited from reven:base. Only the
+# colorburst delta lives here.
+
+# The OOBE automation API and the open DevTools port (chrome_dev.conf gets
+# --enable-oobe-test-api and --remote-debugging-port=9229 from the BSP).
+# They exist purely so the host tooling can drive OOBE while developing.
+# RELEASE BUILDS MUST SET -colorburst_devtools.
+USE="${USE} colorburst_devtools"
+
+# reven's public overlay only lists amd_ucode; ChromeOS Flex gets its real
+# firmware set from Google's private BSP, which we do not have. Without this
+# the image ships with no Intel Wi-Fi or Bluetooth firmware at all (found the
+# hard way: the first colorburst image had a single iwlwifi file).
+LINUX_FIRMWARE="${LINUX_FIRMWARE} iwlwifi-all ibt_9260 ibt_9462 ibt_9560 ibt_ax200 ibt_ax201 ibt_ax203 ibt_ax210 ibt_ax211"
+
+# Intel GPU firmware (GuC/DMC/HuC): the 6.12 i915 driver on Tiger Lake and
+# newer is much more firmware-dependent than 5.15 was. Same private-BSP hole
+# as the wireless firmware above.
+LINUX_FIRMWARE="${LINUX_FIRMWARE} i915_skl i915_glk i915_cnl i915_tgl i915_adl i915_mtl"
+
+# Visible kernel console for hardware bring-up: a stock ChromeOS kernel has
+# no VT, so a laptop with no serial port boots blind and every failure looks
+# like "hangs at the bootloader". These fragments give kernel messages on the
+# EFI framebuffer from the first moments of boot.
+# RELEASE BUILDS SHOULD DROP THESE (frecon owns the screen in production).
+USE="${USE} vtconsole fbconsole efi_earlycon"
+
+# chromeos-config identity database. Without has_chromeos_config_bsp no
+# chromeos-config-bsp is installed, /usr/share/chromeos-config/configfs.img
+# never gets built, cros_config_setup fails at boot, the cros_configfs job
+# never reaches "started", boot-splash never runs, and boot-services waits
+# forever on "stopped boot-splash": the whole boot deadlocks silently after
+# chromeos_startup, on real hardware and in VMs alike. reven gets its config
+# from Google's private overlay; we ship the generic one like amd64-generic.
+USE="${USE} unibuild has_chromeos_config_bsp"

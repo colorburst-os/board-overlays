@@ -1,0 +1,24 @@
+# Copyright 2021 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+base-config: &base_config
+  # RLZ code allocated for development purposes
+  brand-code: ZZCR
+  identity:
+    platform-name: Generic
+  name: amd64-generic
+  # colorburst: CRAS opens the UCM config named <card>.<ucm-suffix> for the
+  # internal sound card (cras-env.sh reads this via cros_config). Our BSP
+  # installs sof-hda-dsp.colorburst, a fork of adhd's generic HDA UCM whose
+  # only change is DspName "speaker_eq" on the internal speaker, activating
+  # the conservative speaker tuning in /etc/cras/dsp.ini. External cards
+  # (USB, HDMI on their own cards) are unaffected.
+  audio:
+    main:
+      ucm-suffix: "colorburst"
+
+chromeos:
+  devices:
+    - skus:
+        - config: *base_config
