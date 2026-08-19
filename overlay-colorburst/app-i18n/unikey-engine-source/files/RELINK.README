@@ -1,0 +1,56 @@
+UniKey Vietnamese engine — LGPLv2 §6 compliance for colorburst
+==============================================================
+
+What this is
+------------
+The files in /usr/share/unikey-engine-source/ are the complete source of the
+UniKey Vietnamese input engine ("ukengine", LGPL-2.0-or-later) as vendored into
+this build, INCLUDING colorburst's modifications:
+
+  * ukengine.cpp/.h, inputproc.cpp/.h  — the upstream LGPL engine core, unmodified
+  * keycons.h, vnlexi.h, mactab.h      — upstream headers
+  * charset.h, charset_utf8.cpp,
+    vnlexi_tables.cpp, gen_tables.py    — colorburst's clean-room replacement for
+                                          the engine's GPL-charset coupling (a
+                                          UTF-8 emitter + regenerated code-point
+                                          tables); LGPL, not a license severance
+  * mactab_stub.cpp                     — macro table stubbed out (gõ tắt off)
+  * BUILD.gn                            — how it is compiled into ash-chrome
+  * README.chromium                     — provenance (upstream URL + revision)
+  * LICENSE                             — the GNU LGPL v2 text
+
+How the engine is linked
+------------------------
+ash-chrome (BSD-3-Clause) links this engine STATICALLY, inside the sandboxed IME
+utility process, behind the ChromeOS ime mojom::InputMethod seam
+(chromeos/ash/services/ime/unikey_engine.*). LGPL — unlike GPL — permits linking
+the engine into a differently-licensed work; the only obligations are those of
+LGPLv2 §6, discharged as follows.
+
+The license argument, concretely
+--------------------------------
+1. Notices & license text: the LGPL text and upstream copyright ship here
+   (LICENSE, README.chromium).
+2. Complete corresponding source, with our changes: the full engine source above
+   ships on every image, so any recipient has the exact source that produced the
+   linked engine.
+3. Means to relink a modified engine: because the engine is a self-contained
+   source unit with a documented build (BUILD.gn) and no private dependencies,
+   a recipient can modify these files and rebuild ash-chrome (or a standalone
+   libukengine) against them to substitute their own build of the engine. The
+   only Chromium-specific pieces (the mojo adapter) are BSD-3 and separately
+   available. This satisfies the §6 "source form" option for relinking; the
+   Chromium binary itself carries no copyleft obligation.
+
+If Legal prefers the relink obligation quarantined to a swappable unit, the
+preferred follow-up (VIETNAMESE-IME-PERF.md §3.3) is to build the engine as a
+replaceable libukengine.so and dlopen it in the IME service exactly as the stock
+image loads libimedecoder.so — the textbook LGPL "shared library mechanism."
+This package already establishes source availability regardless of which link
+form ships.
+
+Regenerating this snapshot
+--------------------------
+The tarball in files/ is a pinned copy of chromium-src/src/third_party/unikey.
+When that source changes, regenerate it with files/regen-snapshot.sh so the
+shipped source matches the linked engine.
