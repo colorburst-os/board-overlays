@@ -124,18 +124,22 @@ src_install() {
 	do_osrelease_field ID colorburst
 	do_osrelease_field HOME_URL "https://github.com/colorburst-os"
 
-	# Release version: R<year>.<week floored to a multiple of 4>.<minor>.
-	# Year/week come from the build date; the minor lives in
-	# files/RELEASE-MINOR and is bumped by hand for each release inside a
-	# 4-week window (reset to 1 when the window rolls over).
-	# chromium/build-image.sh derives the image file name from the same
-	# file, so the two cannot drift.
-	local minor week ver
-	minor="$(< "${FILESDIR}"/RELEASE-MINOR)"
-	week=$(( 10#$(date +%V) / 4 * 4 ))
-	ver="R$(date +%G).${week}.${minor}"
-	do_osrelease_field VERSION "${ver}"
-	do_osrelease_field BUILD_ID "$(date +%Y%m%d)"
+	# Release version: <year>.<series>.<patch>, read VERBATIM from
+	# files/RELEASE. Deliberately NOT derived from the build clock: the
+	# version identifies the SOURCE, so rebuilding a given commit has to
+	# reproduce the same version string. (Through 2026.32.9 the year/week
+	# came from `date`, so the same tree built in a different week produced
+	# a different version and a shipped release could not be reproduced at
+	# all.) Every other consumer -- chromium/build-release.sh,
+	# build-image.sh, build-ota-test-image.sh, rebuild-release.sh -- reads
+	# this same file, so they cannot drift. Bump it with release/cut.sh.
+	local ver
+	ver="$(< "${FILESDIR}"/RELEASE)"
+	do_osrelease_field VERSION "R${ver}"
+	# BUILD_ID identifies the build INPUTS, not the day: the chromium-os
+	# commit that drove the build, written by release/cut.sh. Falls back to
+	# the version itself for a hand build with no BUILD-ID recorded.
+	do_osrelease_field BUILD_ID "$(< "${FILESDIR}"/BUILD-ID 2>/dev/null || echo "${ver}")"
 
 	# Mints /var/lib/colorburst/device-id once, on installed systems only.
 	# update_engine sends it to our update server so releases can be staged
