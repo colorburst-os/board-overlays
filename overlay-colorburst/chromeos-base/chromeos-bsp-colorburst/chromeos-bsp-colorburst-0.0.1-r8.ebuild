@@ -133,13 +133,26 @@ src_install() {
 	# all.) Every other consumer -- chromium/build-release.sh,
 	# build-image.sh, build-ota-test-image.sh, rebuild-release.sh -- reads
 	# this same file, so they cannot drift. Bump it with release/cut.sh.
-	local ver
+	local ver build_id
 	ver="$(< "${FILESDIR}"/RELEASE)"
+	[[ -n ${ver} ]] || die "${FILESDIR}/RELEASE is empty -- the tree has no version"
 	do_osrelease_field VERSION "R${ver}"
 	# BUILD_ID identifies the build INPUTS, not the day: the chromium-os
 	# commit that drove the build, written by release/cut.sh. Falls back to
 	# the version itself for a hand build with no BUILD-ID recorded.
-	do_osrelease_field BUILD_ID "$(< "${FILESDIR}"/BUILD-ID 2>/dev/null || echo "${ver}")"
+	#
+	# Read it in two steps on purpose. `$(< file)` is a bash special form
+	# that reads the file; the moment anything else joins it -- as in
+	# `$(< file || echo fallback)` -- it degrades to a null command with a
+	# stdin redirect and expands to the EMPTY STRING. That is what it did
+	# here, and do_osrelease_field dies on an empty value, so every release
+	# build broke until this was fixed.
+	build_id="${ver}"
+	if [[ -s ${FILESDIR}/BUILD-ID ]]; then
+		build_id="$(< "${FILESDIR}"/BUILD-ID)"
+		[[ -n ${build_id} ]] || build_id="${ver}"
+	fi
+	do_osrelease_field BUILD_ID "${build_id}"
 
 	# Mints /var/lib/colorburst/device-id once, on installed systems only.
 	# update_engine sends it to our update server so releases can be staged
