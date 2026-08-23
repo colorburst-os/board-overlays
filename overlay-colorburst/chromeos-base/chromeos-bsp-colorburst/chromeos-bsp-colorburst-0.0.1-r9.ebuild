@@ -219,14 +219,15 @@ pkg_postinst() {
 		--disable-gaia-services
 		--disable-hid-detection-on-oobe
 
-		# Vietnamese by default. cros-regions.json already carries a "vn"
-		# entry; --cros-region overrides the VPD region, which a generic
-		# board does not have. Gives Vietnamese OOBE, Asia/Ho_Chi_Minh, and
-		# the Vietnamese keyboard layouts.
+		# No --cros-region here. The region is not a property of the build
+		# any more: session_manager reads colorburst.txt off the OEM
+		# partition and passes --cros-region itself
+		# (login_manager/colorburst_config.cc), so one image serves every
+		# language variant and a USB stick's language is set by editing a
+		# file on an already-built image. See release/make-variant.sh.
 		#
-		# Telex typing works: our Chrome restores the in-process rule-based
-		# engine, so vkd_vi_telex needs no decoder blob. See VIETNAMESE-IME.md.
-		--cros-region=vn
+		# Pinning it here would defeat that on developer images, where
+		# chrome_dev.conf is applied AFTER the OEM region and would win.
 
 	EOF
 

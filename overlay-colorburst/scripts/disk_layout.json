@@ -1,0 +1,60 @@
+{
+  "_comment": [
+    "colorburst disk layout. Identical to reven's (disk_layout_v2) except for",
+    "the OEM partition, #8.",
+    "",
+    "#8 holds the colorburst variant configuration -- the one file that says",
+    "which language and, in time, which behaviour this device has. It is the",
+    "only partition that survives all three of install (chromeos-install copies",
+    "it USB -> disk), OTA (payloads carry KERN + ROOT only) and powerwash",
+    "(clobber_state wipes STATE), and it carries neither a dm-verity hash tree",
+    "nor a signature, so writing to it neither needs a rebuild nor invalidates",
+    "anything.",
+    "",
+    "It is FAT32 rather than ext4 so that the person preparing a USB stick can",
+    "open colorburst.txt in Notepad. That is the whole reason: the people who",
+    "hand a laptop to a relative are on Windows, and telling them to boot Linux",
+    "to change the language would defeat the point of making language a file.",
+    "Windows also needs the partition TYPE to be Microsoft basic data, which is",
+    "not expressible here -- chromite's VALID_PARTITION_TYPES has no such entry",
+    "-- so release/make-variant.sh sets that GUID after the build.",
+    "",
+    "64 MiB, up from the stock 16 MiB, because FAT32 requires at least 65525",
+    "clusters and 16 MiB yields 32224. mkfs.vfat builds that undersized",
+    "filesystem without complaint -- only fsck.vfat says 'less than the required",
+    "minimum ... may lead to problems on some systems' -- and an out-of-spec",
+    "FAT32 is exactly the thing Windows may balk at, which would defeat the",
+    "point. 64 MiB gives ~129k clusters, comfortably in spec, and leaves room",
+    "for whatever a variant needs to carry later.",
+    "",
+    "fs_format is 'vfat', NOT 'fat32', with the FAT32 asked for via fs_options.",
+    "The same string is used for two different things: filesystem_util.sh takes",
+    "it as an mkfs selector, where 'fat32' means mkfs.vfat -F 32, but it is also",
+    "baked into the image as FS_FORMAT_OEM and handed STRAIGHT to mount(2) by",
+    "chromeos_startup (init/startup/stateful_mount.cc). 'fat32' is not a kernel",
+    "filesystem name, so that mount fails with ENODEV, /usr/share/oem stays",
+    "empty, and every device silently falls back to English. Found by booting",
+    "it: 'mount of /usr/share/oem failed with code 0: No such device (19)'.",
+    "'vfat' satisfies both readers and still mounts FAT12/16/32 alike.",
+    "",
+    "The override lives in 'common' so every image type inherits it; 'base' is",
+    "present but empty because chromite requires the key to exist."
+  ],
+
+  "parent": "disk_layout_v2.json",
+
+  "layouts": {
+    "common": [
+      {
+        "num": 8,
+        "label": "OEM",
+        "type": "data",
+        "fs_format": "vfat",
+        "fs_options": { "vfat": "-F 32" },
+        "size": "64 MiB",
+        "uuid": "random"
+      }
+    ],
+    "base": []
+  }
+}
