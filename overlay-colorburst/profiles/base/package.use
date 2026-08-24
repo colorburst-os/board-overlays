@@ -1,0 +1,24 @@
+# Copyright 2026 The ChromiumOS Authors
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# autotest-chrome does not build in this tree. Its src_compile runs autotest's
+# own client-test setup, which dies importing a python module it does not have:
+#
+#   ERROR:root:video_AVAnalysis import error: No module named 'telemetry'
+#   ERROR: chromeos-base/autotest-chrome-0.0.1-r8232 failed (compile phase)
+#
+# autotest.eclass guards the failure with `|| ! use buildcheck || die`, so
+# -buildcheck turns "these tests did not build" from fatal into ignored. That is
+# the honest description of colorburst's position: we ship no autotest and have
+# never run one, so whether its client tests compile is not information we act
+# on.
+#
+# It cannot simply be excluded instead. `cros build-packages --no-withautotest`
+# drops chromeos-base/autotest-all, but autotest-chrome still arrives as a
+# dependency of virtual/target-os-test, which the test image genuinely needs.
+#
+# This surfaced only once the board wipe in rebuild-release.sh was fixed: the
+# wipe had been failing silently for a long time, so no package was ever built
+# from scratch and this one was always already installed from an older tree.
+chromeos-base/autotest-chrome -buildcheck
