@@ -169,6 +169,21 @@ src_install() {
 		insinto /etc/init
 		doins "${FILESDIR}"/init/cb-diag.conf
 	fi
+
+	# /opt/oem -> /usr/share/oem.
+	#
+	# ChromeOS reads OEM customization from /opt/oem/etc/startup_manifest.json
+	# (ash/constants/ash_paths.cc, StartupCustomizationDocument): the device's
+	# initial locale, timezone and keyboard layout. That is precisely what a
+	# colorburst language variant is, so we use that file rather than inventing
+	# one -- release/make-variant.sh writes it onto the OEM partition.
+	#
+	# The catch is that the OEM partition mounts at /usr/share/oem
+	# (init/startup/stateful_mount.cc) while Chrome looks under /opt/oem, and
+	# nothing in a stock image bridges the two -- on a plain reven rootfs
+	# /opt holds only boringssl and google. Hence this symlink. It is the whole
+	# of colorburst's locale plumbing: no patched paths, no second mechanism.
+	dosym /usr/share/oem /opt/oem
 }
 
 pkg_postinst() {
@@ -219,15 +234,16 @@ pkg_postinst() {
 		--disable-gaia-services
 		--disable-hid-detection-on-oobe
 
-		# No --cros-region here. The region is not a property of the build
-		# any more: session_manager reads colorburst.txt off the OEM
-		# partition and passes --cros-region itself
-		# (login_manager/colorburst_config.cc), so one image serves every
-		# language variant and a USB stick's language is set by editing a
-		# file on an already-built image. See release/make-variant.sh.
+		# No --cros-region here, and none anywhere else. Locale, timezone
+		# and keyboard come from ChromeOS's own OEM customization file,
+		# /opt/oem/etc/startup_manifest.json on the OEM partition, written
+		# per variant by release/make-variant.sh.
 		#
-		# Pinning it here would defeat that on developer images, where
-		# chrome_dev.conf is applied AFTER the OEM region and would win.
+		# A region would silently defeat that. It populates the
+		# initial_locale / initial_timezone / keyboard_layout statistics
+		# from cros-regions.json, and StartupCustomizationDocument applies
+		# statistics OVER the manifest unconditionally -- so any region at
+		# all beats the file that is meant to be authoritative.
 
 	EOF
 
