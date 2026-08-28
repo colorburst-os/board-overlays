@@ -136,7 +136,11 @@ src_install() {
 	local ver build_id
 	ver="$(< "${FILESDIR}"/RELEASE)"
 	[[ -n ${ver} ]] || die "${FILESDIR}/RELEASE is empty -- the tree has no version"
-	do_osrelease_field VERSION "R${ver}"
+	# NOT os-release VERSION: upstream fills that with the numeric Chrome
+	# milestone and btmanagerd's pre-start does printf '%04x' on it, under
+	# sh -e. "R2026.32.11" made that fail, so Floss never started and the
+	# device had no Bluetooth at all.
+	do_osrelease_field COLORBURST_VERSION "R${ver}"
 	# BUILD_ID identifies the build INPUTS, not the day: the chromium-os
 	# commit that drove the build, written by release/cut.sh. Falls back to
 	# the version itself for a hand build with no BUILD-ID recorded.
