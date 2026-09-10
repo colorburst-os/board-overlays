@@ -37,3 +37,15 @@ USE="${USE} vtconsole fbconsole efi_earlycon"
 # chromeos_startup, on real hardware and in VMs alike. reven gets its config
 # from Google's private overlay; we ship the generic one like amd64-generic.
 USE="${USE} unibuild has_chromeos_config_bsp"
+
+# Do NOT apply Chromium's checked-in field trial testing config
+# (testing/variations/fieldtrial_testing_config.json). That file is Chromium's
+# CI matrix, not a shipping configuration, and an UNBRANDED build applies it by
+# default: ShouldUseFieldTrialTestingConfig() only opts out for
+# GOOGLE_CHROME_BRANDING, or when a --variations-server-url is set. We are
+# neither branded nor talking to a variations server, so we got it in full --
+# 784 studies matching the chromeos platform, forcing 1068 features on and 101
+# off, none of them ours. Among them ExternalHDR10, which marked any
+# BT.2020+PQ external monitor as HDR10 while the connector was driven in SDR
+# with no HDR metadata: every such display came out washed out.
+EXTRA_GN_ARGS="disable_fieldtrial_testing_config=true"
